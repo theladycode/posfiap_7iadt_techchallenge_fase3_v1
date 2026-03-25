@@ -1,0 +1,42 @@
+# ============================================================
+# Dockerfile.training
+# Container para executar o fine-tuning do modelo médico
+# Base com suporte a CUDA para GPU NVIDIA
+# ============================================================
+
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+
+# Metadados do container
+LABEL maintainer="FIAP PosTech"
+LABEL description="Container de fine-tuning do assistente médico com QLoRA"
+LABEL version="1.0.0"
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Instala dependências de sistema necessárias
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia e instala as dependências Python primeiro (cache otimizado)
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copia os arquivos necessários para o fine-tuning
+COPY fine_tuning/ ./fine_tuning/
+COPY data/ ./data/
+
+# Cria os diretórios de saída
+RUN mkdir -p models logs
+
+# Variáveis de ambiente para configuração
+ENV PYTHONUNBUFFERED=1
+ENV TOKENIZERS_PARALLELISM=false
+ENV TRANSFORMERS_CACHE=/app/.cache/transformers
+
+# Comando padrão: preparar dataset e treinar
+CMD ["sh", "-c", "python fine_tuning/prepare_dataset.py && python fine_tuning/train.py"]

@@ -1,0 +1,65 @@
+# ============================================================
+# .gitignore — Assistente Médico Virtual
+# ============================================================
+
+# Variáveis de ambiente (NUNCA commitar)
+.env
+
+# Modelos treinados (arquivos grandes — usar HuggingFace Hub ou volume Docker)
+models/*
+!models/.gitkeep
+
+# Checkpoints intermediários de treino (não necessários para execução)
+models/**/checkpoint-*/
+
+# Frontend — dependências e build
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+ENV/
+
+# Dados processados e índices FAISS (gerados localmente)
+data/processed/*
+!data/processed/.gitkeep
+data/synthetic/*
+!data/synthetic/.gitkeep
+
+# Logs de interações (dados sensíveis)
+logs/*.jsonl
+logs/*.png
+logs/*.csv
+logs/*.json
+!logs/.gitkeep
+
+# Cache do HuggingFace (modelos baixados)
+.cache/
+*.cache
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Distribuição Python
+dist/
+build/
+*.egg-info/

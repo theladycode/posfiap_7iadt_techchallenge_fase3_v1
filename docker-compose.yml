@@ -1,0 +1,125 @@
+
+# ============================================================
+# docker-compose.yml — Orquestração do Assistente Médico
+#
+# Serviços:
+#   training  — Fine-tuning do modelo (perfil: training)
+#   api       — FastAPI REST (LLM + RAG)
+#   frontend  — Interface React servida via nginx
+#   nginx     — Proxy reverso (perfil: production)
+#
+# Uso básico:
+#   docker compose up api frontend                         # Sobe a aplicação
+#   docker compose --profile training up training          # Executa o fine-tuning
+#   docker compose --profile production up                 # Produção com nginx
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # Serviço de fine-tuning (executar uma vez para treinar)
+  # Requer NVIDIA Container Toolkit instalado no host
+  # ----------------------------------------------------------
+  training:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.training
+    container_name: medical-assistant-training
+    volumes:
+      - ./models:/app/models      # Persiste o modelo treinado no host
+      - ./logs:/app/logs          # Persiste os logs de treino
+      - ./data:/app/data          # Acesso aos datasets
+    environment:
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - MODEL_BASE=${MODEL_BASE:-meta-llama/Meta-Llama-3-8B}
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]   # Requer NVIDIA Container Toolkit
+    profiles:
+      - training                    # Só sobe com: docker compose --profile training up
+    restart: "no"                   # Não reinicia automaticamente após treino
+
+  # ----------------------------------------------------------
+  # Serviço da API REST (FastAPI + Swagger UI)
+  # Carrega o LLM e expõe todos os endpoints do assistente
+  # ----------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    container_name: medical-assistant-api
+    command: ["python", "interface/api.py"]
+    ports:
+      - "${API_PORT:-8000}:8000"    # API REST na porta 8000
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - hf_cache:/root/.cache/huggingface  # Cache do HuggingFace (evita re-download)
+    environment:
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - MODEL_PATH=/app/models/medical-llama3-qlora
+      - API_PORT=8000
+      - LOG_PATH=/app/logs/interactions.jsonl
+      - FAISS_INDEX_PATH=/app/data/processed/faiss_index
+      - DOCS_PATH=/app/data/raw
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s            # Tempo para baixar e carregar o modelo
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Frontend React (Vite + Tailwind) servido via nginx
+  # Proxy /api/* → medical-assistant-api:8000
+  # ----------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medical-assistant-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Proxy reverso nginx (opcional, perfil: production)
+  # ----------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: medical-assistant-nginx
+    ports:
+      - "80:80"
+      - "443:443"                   # Para HTTPS com certificado SSL
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - frontend
+    profiles:
+      - production                  # Só sobe com: docker compose --profile production up
+    restart: unless-stopped
+
+# ----------------------------------------------------------
+# Volumes nomeados para persistência dos dados
+# ----------------------------------------------------------
+volumes:
+  models:
+    driver: local
+  logs:
+    driver: local
+  data:
+    driver: local
+  hf_cache:
+    driver: local                   # Cache do HuggingFace — evita re-download do modelo base

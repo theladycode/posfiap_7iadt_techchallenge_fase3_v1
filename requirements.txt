@@ -1,0 +1,38 @@
+# ============================================================
+# requirements.txt — Dependências do Assistente Médico Virtual
+# ============================================================
+
+# LLM e Fine-tuning
+torch>=2.1.0
+transformers>=4.40.0
+peft>=0.10.0           # LoRA/QLoRA
+bitsandbytes>=0.43.0   # Quantização 4-bit
+datasets>=2.19.0       # Datasets HuggingFace
+trl>=0.8.0             # SFTTrainer para fine-tuning supervisionado
+accelerate>=0.29.0
+
+# LangChain
+langchain>=0.2.0
+langchain-community>=0.2.0
+langgraph>=0.1.0
+langchain-huggingface>=0.0.3
+
+# RAG e busca
+faiss-cpu>=1.8.0
+sentence-transformers>=2.7.0
+
+# Interface
+gradio>=4.31.0
+fastapi>=0.111.0
+uvicorn>=0.29.0
+
+# Utilitários
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+pandas>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+rouge-score>=0.1.2     # Métrica de avaliação
+
+# Visualização
+matplotlib>=3.8.0

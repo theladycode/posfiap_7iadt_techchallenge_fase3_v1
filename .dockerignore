@@ -1,0 +1,61 @@
+# ============================================================
+# .dockerignore — Assistente Médico Virtual
+# Exclui arquivos desnecessários do contexto de build Docker
+# ============================================================
+
+# Ambiente virtual Python (instalado dentro do container)
+.venv/
+venv/
+env/
+
+# Dependências e build do frontend (gerados no stage builder)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Modelos treinados (montados via volume Docker em runtime)
+models/
+
+# Dados processados (montados via volume Docker em runtime)
+data/
+
+# Logs (montados via volume Docker em runtime)
+logs/
+
+# Variáveis de ambiente
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Cache do HuggingFace
+.cache/
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentação e arquivos de projeto (não necessários no container)
+README.md
+*.docx
+*.pdf
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Distribuição Python
+dist/
+build/
+*.egg-info/

@@ -1,0 +1,108 @@
+# ============================================================
+# config.yaml — Configurações do Fine-tuning com QLoRA
+# ============================================================
+
+# --- Modelo Base ---
+model:
+  name: "meta-llama/Meta-Llama-3-8B"
+  fallback: "mistralai/Mistral-7B-v0.1"
+  # Comprimento máximo de sequência (tokens)
+  max_seq_length: 2048
+  # Tipo de dado para carregamento
+  torch_dtype: "float16"
+
+# --- Quantização 4-bit (QLoRA) ---
+quantization:
+  # Habilitar quantização 4-bit
+  load_in_4bit: true
+  # Tipo de dado da computação (bf16 recomendado para hardware compatível)
+  bnb_4bit_compute_dtype: "float16"
+  # Tipo de quantização (NF4 = Normal Float 4)
+  bnb_4bit_quant_type: "nf4"
+  # Quantização dupla para redução extra de memória
+  bnb_4bit_use_double_quant: true
+
+# --- Configuração LoRA ---
+lora:
+  # Rank da decomposição (maior = mais parâmetros, mais capacidade)
+  r: 16
+  # Fator de escala LoRA (geralmente 2x o rank)
+  lora_alpha: 32
+  # Taxa de dropout para regularização
+  lora_dropout: 0.05
+  # Módulos alvo para aplicar LoRA
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+  # Habilitar bias nos adaptadores
+  bias: "none"
+  # Tipo de tarefa
+  task_type: "CAUSAL_LM"
+
+# --- Configuração de Treinamento ---
+training:
+  # Número de épocas de treinamento
+  num_train_epochs: 3
+  # Batch size por dispositivo
+  per_device_train_batch_size: 4
+  # Batch size para avaliação
+  per_device_eval_batch_size: 4
+  # Acumulação de gradientes (simula batch maior)
+  gradient_accumulation_steps: 4
+  # Taxa de aprendizado
+  learning_rate: 0.0002
+  # Tipo do scheduler de aprendizado
+  lr_scheduler_type: "cosine"
+  # Aquecimento de passos (2% do total)
+  warmup_ratio: 0.02
+  # Salvar checkpoint a cada N passos
+  save_steps: 50
+  # Avaliar a cada N passos
+  eval_steps: 50
+  # Máximo de checkpoints a manter
+  save_total_limit: 3
+  # Registrar métricas a cada N passos
+  logging_steps: 10
+  # Habilitar gradient checkpointing (economiza VRAM)
+  gradient_checkpointing: true
+  # Tipo de dado para treino (fp16 ou bf16)
+  fp16: true
+  bf16: false
+  # Otimizador
+  optim: "paged_adamw_32bit"
+  # Agrupamento por tamanho de sequência (eficiência)
+  group_by_length: true
+  # Comprimento máximo de prompt
+  max_prompt_length: 512
+
+# --- Caminhos ---
+paths:
+  # Dataset processado
+  dataset: "data/processed/medical_dataset.json"
+  # Onde salvar o modelo treinado
+  output_model: "models/medical-llama3-qlora"
+  # Logs de treinamento
+  output_logs: "logs/"
+  # Gráfico de loss
+  loss_plot: "logs/training_loss.png"
+
+# --- Configuração do Dataset ---
+dataset:
+  # Proporção para validação
+  validation_split: 0.1
+  # Semente aleatória para reprodutibilidade
+  seed: 42
+  # Número máximo de exemplos de treino (null = todos)
+  max_train_samples: null
+  # Template de formatação para o SFTTrainer
+  template: "alpaca"
+
+# --- Avaliação ---
+evaluation:
+  # Métricas a calcular
+  metrics:
+    - "rouge1"
+    - "rouge2"
+    - "rougeL"
+  # Número de amostras para avaliação qualitativa
+  num_qualitative_samples: 10

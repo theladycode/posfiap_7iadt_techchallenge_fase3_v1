@@ -1,0 +1,29 @@
+# ============================================================
+# docker-compose.gpu.yml — Override para habilitar GPU nos serviços
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up app api
+#
+# Requer NVIDIA Container Toolkit instalado no host.
+# Verificar: nvidia-smi (deve funcionar dentro do container)
+# ============================================================
+
+services:
+
+  app:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  api:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
